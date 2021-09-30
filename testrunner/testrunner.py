@@ -885,10 +885,11 @@ class TestResultWithMessage(TestResult):
     def addError(self, test: TestCase,
                  err: Tuple[Type[Exception], BaseException, TracebackType]):
         super().addError(test, err)
-        error_cls, error, _ = err
         self.add_outcome(test, TestOutcome.FAIL,
-                         f"{error_cls.__name__}: "
-                         f"{(NEW_LINE + SPACE * TAB_SIZE).join(str(error).splitlines())}")
+                         "\n" + textwrap.indent(
+                             "".join(traceback.format_exception(*err)),
+                             " " * 8
+                         ))
 
     @unittest.result.failfast
     def addFailure(self, test: TestCase,
@@ -897,8 +898,10 @@ class TestResultWithMessage(TestResult):
         super().addFailure(test, err)
         error_cls, error, _ = err
         self.add_outcome(test, TestOutcome.FAIL,
-                         f"{error_cls.__name__}: "
-                         f"{(NEW_LINE + SPACE * TAB_SIZE).join(str(error).splitlines())}")
+                         "\n" + textwrap.indent(
+                             "".join(traceback.format_exception(*err)),
+                             " " * 8
+                         ))
 
     def addSkip(self, test: TestCase, reason: str):
         super().addSkip(test, reason)
@@ -1164,7 +1167,8 @@ class TestMaster:
             if self._args.json:
                 errors = []
                 for _, (err_type, msg, err_msg) in self._import_errors:
-                    errors.append(dict(error=err_type, error_message=f'{msg}\n{err_msg}'))
+                    errors.append(
+                        dict(error=err_type, error_message=f'{msg}\n{err_msg}'))
                 json.dump({"errors": errors}, sys.stdout, indent=4)
             else:
                 _, (err_type, msg, err_msg) = self._import_errors[0]
